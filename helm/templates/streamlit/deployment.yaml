@@ -21,7 +21,7 @@ spec:
         - name: streamlit
           image: "{{ .Values.streamlit.image.repository }}:{{ .Values.streamlit.image.tag }}"
           args:
-            - '--sse-port'
+            - '--server.port'
             - '{{ .Values.streamlit.service.port }}'
           imagePullPolicy: {{ .Values.streamlit.image.pullPolicy }}
           ports:
