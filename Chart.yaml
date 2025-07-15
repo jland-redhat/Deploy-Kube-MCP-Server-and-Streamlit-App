@@ -1,0 +1,8 @@
+apiVersion: v2
+name: mcp-server
+version: 0.1.0
+description: A Helm chart for deploying MCP server and Streamlit frontend
+type: application
+sources:
+  - https://github.com/manusa/kubernetes_mcp_server
+dependencies: []

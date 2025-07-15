@@ -1,0 +1,20 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ include "mcp-server.fullname" . }}-streamlit
+  labels:
+    app: {{ include "mcp-server.name" . }}
+    component: streamlit
+spec:
+  to:
+    kind: Service
+    name: {{ include "mcp-server.fullname" . }}-streamlit
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  {{- if .Values.streamlit.route.annotations }}
+  annotations:
+    {{- toYaml .Values.streamlit.route.annotations | nindent 4 }}
+  {{- end }}

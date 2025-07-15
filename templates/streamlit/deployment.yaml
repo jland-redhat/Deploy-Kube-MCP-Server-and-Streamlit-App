@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mcp-server.fullname" . }}-streamlit
+  labels:
+    app: {{ include "mcp-server.name" . }}
+    component: streamlit
+spec:
+  replicas: {{ .Values.streamlit.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "mcp-server.name" . }}
+      component: streamlit
+  template:
+    metadata:
+      labels:
+        app: {{ include "mcp-server.name" . }}
+        component: streamlit
+    spec:
+      containers:
+        - name: streamlit
+          image: "{{ .Values.streamlit.image.repository }}:{{ .Values.streamlit.image.tag }}"
+          imagePullPolicy: {{ .Values.streamlit.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.streamlit.service.port }}
+          resources:
+            {{- toYaml .Values.streamlit.resources | nindent 12 }}

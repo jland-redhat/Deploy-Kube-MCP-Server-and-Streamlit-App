@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mcp-server.fullname" . }}-mcp
+  labels:
+    app: {{ include "mcp-server.name" . }}
+    component: mcp
+spec:
+  replicas: {{ .Values.mcp.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "mcp-server.name" . }}
+      component: mcp
+  template:
+    metadata:
+      labels:
+        app: {{ include "mcp-server.name" . }}
+        component: mcp
+    spec:
+      containers:
+        - name: mcp-server
+          image: "{{ .Values.mcp.image.repository }}:{{ .Values.mcp.image.tag }}"
+          imagePullPolicy: {{ .Values.mcp.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.mcp.service.port }}
+          resources:
+            {{- toYaml .Values.mcp.resources | nindent 12 }}

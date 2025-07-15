@@ -1,0 +1,37 @@
+mcp:
+  replicaCount: 1
+  image:
+    repository: quay.io/manusa/kubernetes_mcp_server
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8000
+  resources:
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+
+streamlit:
+  replicaCount: 1
+  image:
+    repository: quay.io/manusa/kubernetes_mcp_server
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8501
+  route:
+    enabled: true
+    annotations:
+      openshift.io/host.name: ""
+  resources:
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
