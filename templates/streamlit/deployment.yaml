@@ -25,3 +25,12 @@ spec:
             - containerPort: {{ .Values.streamlit.service.port }}
           resources:
             {{- toYaml .Values.streamlit.resources | nindent 12 }}
+          env:
+            - name: REMOTE_OCP_MCP_URL
+              value: {{ .Values.remoteOcpMcpUrl | quote }}
+            - name: TAVILY_SEARCH_API_KEY
+              value: {{ .Values.tavilySearchApiKey | quote }}
+            - name: REMOTE_BASE_URL
+              value: {{ .Values.remoteBaseUrl | quote }}
+            - name: INFERENCE_MODEL_ID
+              value: {{ .Values.inferenceModelId | quote }}

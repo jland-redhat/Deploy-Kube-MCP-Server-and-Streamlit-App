@@ -15,6 +15,11 @@ mcp:
       memory: "256Mi"
       cpu: "250m"
 
+remoteOcpMcpUrl: "http://openshift-mcp-server:8080"
+tavilySearchApiKey: ""
+remoteBaseUrl: "http://llamastack-server:8321"
+inferenceModelId: "llama32-3b"
+
 streamlit:
   replicaCount: 1
   image:
