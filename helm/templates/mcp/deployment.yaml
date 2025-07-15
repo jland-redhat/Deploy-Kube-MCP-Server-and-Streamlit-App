@@ -21,8 +21,8 @@ spec:
         - name: mcp-server
           image: "{{ .Values.mcp.image.repository }}:{{ .Values.mcp.image.tag }}"
           args:
-            - '--sse-port'
-            - '{{ .Values.streamlit.service.port }}'
+            - '--port'
+            - '{{ .Values.mcp.service.port }}'
           imagePullPolicy: {{ .Values.mcp.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.mcp.service.port }}
