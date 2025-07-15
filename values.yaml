@@ -28,7 +28,7 @@ streamlit:
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
-    port: 8501
+    port: 8080
   route:
     enabled: true
     annotations:
