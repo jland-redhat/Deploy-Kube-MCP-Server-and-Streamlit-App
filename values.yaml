@@ -23,12 +23,12 @@ inferenceModelId: "llama32-3b"
 streamlit:
   replicaCount: 1
   image:
-    repository: quay.io/manusa/kubernetes_mcp_server
+    repository: quay.io/llama-stack/streamlit-example
     tag: latest
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
-    port: 8080
+    port: 8501
   route:
     enabled: true
     annotations:
