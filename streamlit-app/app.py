@@ -1,11 +1,10 @@
 import os
-import json
+import traceback
+from httpx import URL
+from llama_stack_client.lib.agents.tool_parser import ToolParser
+from llama_stack_client.types.agents.turn_create_params import ToolConfig
 import streamlit as st
 from dotenv import load_dotenv
-from typing import Dict, List, Any, Optional, Set, Tuple
-from rich.pretty import pprint
-from termcolor import cprint
-from utils import step_printer
 from llama_stack_client import LlamaStackClient, Agent, AgentEventLogger
 import uuid
 
@@ -13,7 +12,7 @@ import uuid
 load_dotenv()
 
 # Constants
-MODEL_ID = "llama32-3b"
+MODEL_ID = os.getenv("INFERENCE_MODEL_ID", "llama32-3b")
 MODEL_PROMPT= """You are a helpful assistant. You have access to a number of tools.
 Whenever a tool is called, be sure return the Response in a friendly and helpful tone."""
 
@@ -61,33 +60,51 @@ def initialize_llama_stack(client: LlamaStackClient):
     # Initialize MCP servers from environment variables
     st.session_state.mcp_servers = {}
     
-    # Register OpenShift MCP server if URL is provided
-    ocp_mcp_url = os.getenv("REMOTE_OCP_MCP_URL")
-    if ocp_mcp_url and ocp_mcp_url != "http://openshift-mcp-server:8080":
-        try:
-            client.toolgroups.register(
-                toolgroup_id="mcp::openshift",
+
+
+def add_mcp_server(server_name: str, server_url: str):
+    """Add an MCP server to the list of registered servers"""
+    try:
+        registered_tools = st.session_state.llama_client.tools.list()
+        registered_toolgroups = [tool.toolgroup_id for tool in registered_tools]
+        
+        if f"mcp::{server_name}" not in registered_toolgroups:
+            st.session_state.llama_client.toolgroups.register(
+                toolgroup_id=f"mcp::{server_name}",
                 provider_id="model-context-protocol",
-                mcp_endpoint={"uri": ocp_mcp_url}
+                mcp_endpoint=dict(uri=server_url)
             )
-            add_mcp_server("OpenShift MCP", ocp_mcp_url)
-            st.toast("Successfully registered OpenShift MCP server", icon="✅")
-        except Exception as e:
-            st.error(f"Failed to register OpenShift MCP server: {str(e)}")
-    
-    # Register Slack MCP server if URL is provided
-    slack_mcp_url = os.getenv("REMOTE_SLACK_MCP_URL")
-    if slack_mcp_url and slack_mcp_url != "http://slack-mcp-server:8080":
-        try:
-            client.toolgroups.register(
-                toolgroup_id="mcp::slack",
-                provider_id="model-context-protocol",
-                mcp_endpoint={"uri": slack_mcp_url}
-            )
-            add_mcp_server("Slack MCP", slack_mcp_url)
-            st.toast("Successfully registered Slack MCP server", icon="✅")
-        except Exception as e:
-            st.error(f"Failed to register Slack MCP server: {str(e)}")
+            if server_name not in st.session_state.registered_mcp_servers:
+                st.session_state.registered_mcp_servers.append(server_name)
+            return True, f"Successfully registered MCP server: {server_name}"
+        else:
+            if server_name not in st.session_state.registered_mcp_servers:
+                st.session_state.registered_mcp_servers.append(server_name)
+            return True, f"MCP server '{server_name}' already registered"
+    except Exception as e:
+        return False, f"Failed to register MCP server: {str(e)}"
+
+def add_mcp_server_form():
+    """Display form to add a new MCP server"""
+    with st.form("add_mcp_server"):
+        st.subheader("Add MCP Server")
+        server_name = st.text_input("Server Name", 
+                                 help="A unique name to identify this MCP server")
+        server_url = st.text_input("Server URL", 
+                                 help="Base URL of the MCP server (e.g., http://mcp-server:8080)")
+        
+        if st.form_submit_button("Add Server"):
+            if not server_name or not server_url:
+                st.error("Please provide both server name and URL")
+                return
+                
+            success, message = add_mcp_server(server_name, server_url)
+            if success:
+                st.toast(message, icon="✅")
+            else:
+                st.error(message)
+            st.session_state.show_add_mcp = False
+            st.rerun()
 
 # Initialize session state
 if 'llama_client' not in st.session_state:
@@ -100,6 +117,13 @@ if 'active_agent' not in st.session_state:
     st.session_state.active_agent = None
 if 'mcp_servers' not in st.session_state:
     st.session_state.mcp_servers = {}
+if 'registered_mcp_servers' not in st.session_state:
+    st.session_state.registered_mcp_servers = []
+
+# Register default OpenShift MCP server if not already registered
+default_server_name = "openshift"
+default_server_url = os.getenv("REMOTE_OCP_MCP_URL", "http://ocp-mcp-server:8000/sse")
+success, message = add_mcp_server(default_server_name, default_server_url)
 
 def create_agent(name=None):
     """Create a new agent with a unique ID and optional name
@@ -131,8 +155,7 @@ def create_agent(name=None):
             'sampling_params': {
                 'strategy': strategy,
                 'max_tokens': max_tokens
-            },
-            'tools': ["builtin::websearch"]
+            }
         }
     }
     st.session_state.active_agent = agent_id
@@ -160,16 +183,10 @@ def send_message(agent_id: str, message: str):
     try:
         # Create a new agent if it doesn't exist
         if 'agent' not in agent:
-            # Create the agent
-            agent['agent'] = Agent(
-                client=st.session_state.llama_client,
-                instructions=MODEL_PROMPT,
-                model=agent['config']['model'],
-                sampling_params=st.session_state.sampling_params,
-                tools=agent['config'].get('tools', []),
-                tool_config={"tool_choice":"auto"}
-            )
-            
+            st.error("Agent not found")
+            return
+        
+        if 'session_id' not in agent:
             # Create a new session for the agent
             session_name = f"{agent['name']}_session"
             agent['session_id'] = agent['agent'].create_session(session_name=session_name)
@@ -186,10 +203,11 @@ def send_message(agent_id: str, message: str):
 
         for log in AgentEventLogger().log(response):
             log.print()
+
             if log.role == 'tool_execution':
                 agent['steps'].append({
                     'type': 'tool_execution',
-                    'color': log.color,
+                    'color': log.color if hasattr(log, 'color') and log.color is not None else 'white',
                     'content': log.content
                 })
             if log.role == None:
@@ -201,68 +219,97 @@ def send_message(agent_id: str, message: str):
             'role': 'assistant',
         'content': full_response
         })
-
-        # Store steps for display if available
-        if hasattr(response, 'steps'):
-            for step in response.steps:
-                step_info = {
-                    'type': getattr(step, 'type', 'Step'),
-                    'content': str(step)
-                }
-                agent['steps'].append(step_info)
         
     except Exception as e:
         st.error(f"Error processing message: {str(e)}")
+        traceback.print_exc()
+        # TODO: Add this back currently there is a weird issue with the client where ToolParser is no implemented
+        # agent['messages'].append({
+        #     'role': 'assistant',
+        #     'content': f"Sorry, I encountered an error: {str(e)}"
+        # })
+        # So for now we just print as much of the message as we got
         agent['messages'].append({
             'role': 'assistant',
-            'content': f"Sorry, I encountered an error: {str(e)}"
+            'content': full_response
         })
-
-def add_mcp_server(name: str, url: str):
-    """Add a new MCP server"""
-    server_id = name.lower().replace(' ', '_')
-    st.session_state.mcp_servers[server_id] = {
-        'name': name,
-        'url': url
-    }
 
 # Sidebar for MCP server management
 with st.sidebar:
     st.title("MCP Servers")
     
-    # Display existing MCP servers
-    for server_id, server in st.session_state.mcp_servers.items():
-        with st.expander(f"{server['name']} ({server_id})"):
-            st.text(f"URL: {server['url']}")
+    # Show registered servers
+    if st.session_state.registered_mcp_servers:
+        st.subheader("Registered Servers")
+        for server in st.session_state.registered_mcp_servers:
+            st.markdown(f"- {server}")
+    else:
+        st.info("No MCP servers registered yet")
     
-    # Add new MCP server
-    with st.expander("Add MCP Server", expanded=False):
-        with st.form("add_mcp_server"):
-            server_name = st.text_input("Server Name")
-            server_url = st.text_input("Server URL")
-            if st.form_submit_button("Add Server"):
-                if server_name and server_url:
-                    add_mcp_server(server_name, server_url)
-                    st.rerun()
+    # Add Server button
+    if st.button("➕ Add MCP Server", key="add_mcp_button"):
+        st.session_state.show_add_mcp = True
+
+    # Show add server form if button was clicked
+    if st.session_state.get('show_add_mcp', False):
+        add_mcp_server_form()
+        
+        # Add a cancel button
+        if st.button("Cancel"):
+            st.session_state.show_add_mcp = False
+            st.rerun()
 
 # Main app
 st.title("LLM Agent Chat")
 
 # Agent management
 with st.expander("➕ Create New Agent", expanded=False):
-    agent_name = st.text_input(
-        "Agent Name",
-        value=f"Agent {len(st.session_state.agents) + 1}",
-        help="Enter a name for your new agent"
-    )
-    if st.button(
-        "✨ Create Agent",
-        help="Create a new agent with the specified name",
-        type="primary",
-        use_container_width=True,
-    ):
-        create_agent(agent_name)
-        st.toast(f"Agent '{agent_name}' created successfully!", icon="🤖")
+    with st.form("create_agent_form"):
+        agent_name = st.text_input("Agent Name", key="new_agent_name", value="007")
+        
+        # Show checkboxes for available MCP servers
+        st.write("Attach MCP Servers:")
+        selected_servers = []
+        for server in st.session_state.get('registered_mcp_servers', []):
+            if st.checkbox(server, key=f"mcp_server_{server}"):
+                selected_servers.append(server)
+        
+        if st.form_submit_button("Create Agent"):
+            if agent_name:
+                # Create agent with selected MCP servers
+                agent_tools = [f"mcp::{server}" for server in selected_servers]
+                agent_tools.append("builtin::websearch")
+                
+                # Create the agent with the selected tools
+                agent = Agent(
+                    client=st.session_state.llama_client,
+                    instructions=MODEL_PROMPT,
+                    model=MODEL_ID,
+                    tools=agent_tools,
+                    tool_parser=ToolParser(),
+                    tool_config=ToolConfig(
+                        tool_choice="auto"
+                    ),
+                    sampling_params=st.session_state.sampling_params,
+                )
+                
+                # Store the agent
+                agent_id = str(uuid.uuid4())
+                st.session_state.agents[agent_id] = {
+                    'name': agent_name,
+                    'agent': agent,
+                    'messages': [],
+                    'steps': [],
+                    'config': {
+                        'model': MODEL_ID,
+                        'tools': agent_tools
+                    }
+                }
+                st.session_state.active_agent = agent_id
+                st.success(f"Agent '{agent_name}' created successfully!")
+                st.rerun()
+            else:
+                st.error("Please provide an agent name")
 
 # Agent selection dropdown
 if st.session_state.agents:
@@ -328,11 +375,11 @@ if st.session_state.active_agent:
             st.info("No steps available. Send a message to see the processing steps.")
     
     # Input for new message
-    default_question = "Who did the panthers draft in 2025?"
-    prompt = st.chat_input(default_question)
+    # default_question = "Who did the panthers draft in 2025?"
+    prompt = st.chat_input("Enter your question here")
     
     # Check if we should send the default question (first load)
-    if 'default_question_sent' not in st.session_state:
+    if 'default_question_sent' not in st.session_state and 'default_question' in locals():
         st.session_state.default_question_sent = True
         send_message(st.session_state.active_agent, default_question)
         st.rerun()
@@ -340,6 +387,7 @@ if st.session_state.active_agent:
     elif prompt:
         send_message(st.session_state.active_agent, prompt)
         st.rerun()
+
 
 else:
     st.info("Create a new agent using the '+' button to get started.")

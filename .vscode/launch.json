@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+      {
+          "name": "Python: Streamlit",
+          "type": "python",
+          "request": "launch",
+          "module": "streamlit",
+          "args": [
+              "run",
+              "streamlit-app/app.py",
+              "--server.enableCORS=false",
+              "--server.enableXsrfProtection=false"
+          ],
+          "env": {
+              "STREAMLIT_DEBUG": "1"
+          }
+      }
+  ]
+}
