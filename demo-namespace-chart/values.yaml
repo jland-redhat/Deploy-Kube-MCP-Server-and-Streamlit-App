@@ -1,0 +1,16 @@
+# Default values for demo-namespace-chart
+replicaCount: 1
+
+# For the crashloop deployment
+crashloop:
+  name: crashloop-app
+  image: busybox
+  tag: latest
+  command: ["/bin/sh", "-c", "echo 'This container is supposed to fail'; exit 1"]
+  restartPolicy: Never  # This prevents container restart
+
+# For the bad image deployment
+badimage:
+  name: badimage-app
+  image: this-image-does-not-exist
+  tag: latest

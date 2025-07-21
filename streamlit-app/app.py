@@ -7,14 +7,125 @@ import streamlit as st
 from dotenv import load_dotenv
 from llama_stack_client import LlamaStackClient, Agent, AgentEventLogger
 import uuid
+from pathlib import Path
 
 # Load environment variables
 load_dotenv()
 
 # Constants
 MODEL_ID = os.getenv("INFERENCE_MODEL_ID", "llama32-3b")
-MODEL_PROMPT= """You are a helpful assistant. You have access to a number of tools.
-Whenever a tool is called, be sure return the Response in a friendly and helpful tone."""
+MODEL_PROMPT = """You are a helpful OpenShift assistant. You have access to OpenShift cluster tools and resources.
+Help users with their OpenShift deployments, troubleshooting, and best practices.
+When discussing OpenShift concepts, provide clear and accurate information."""
+
+# Get the absolute path to the assets directory
+BASE_DIR = Path(__file__).parent.absolute()
+LOGO_PATH = BASE_DIR / "assets" / "redhat-car.png"
+
+# Create a header with logo and title
+header_col1, header_col2 = st.columns([1, 4])
+
+with header_col1:
+    if LOGO_PATH.exists():
+        st.image(str(LOGO_PATH), width=100)  # Smaller logo for the header
+    else:
+        st.warning(f"Logo image not found at: {LOGO_PATH}")
+
+with header_col2:
+    st.markdown("""
+    <h1 style='font-family: "Comic Sans MS", cursive, sans-serif; 
+                color: #FF6B35; 
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+                margin-top: 10px;'>
+        Open-Shifter!!! 🚀
+    </h1>
+    """, unsafe_allow_html=True)
+    st.caption("Your AI-powered OpenShift assistant")
+
+# Apply Fun Orange Theme
+st.markdown("""
+    <style>
+    :root {
+        --primary-color: #FF6B35;  /* Orange */
+        --background-color: #FFF8F0;  /* Light orange background */
+        --secondary-background-color: #FFFFFF;
+        --text-color: #2D2D2D;  /* Darker text for better contrast */
+        --accent-color: #FF9F1C;  /* Brighter orange for accents */
+    }
+    
+    .stApp {
+        background-color: var(--background-color);
+        color: var(--text-color);
+        background-image: linear-gradient(135deg, #FFF8F0 0%, #FFE8D6 100%);
+    }
+    
+    .stButton>button {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton>button:hover {
+        background-color: #E65C2E;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .stTextInput>div>div>input {
+        border: 2px solid var(--primary-color);
+        border-radius: 10px;
+        padding: 8px 12px;
+    }
+    
+    .stSelectbox>div>div>div {
+        color: var(--text-color);
+    }
+    
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
+        color: var(--primary-color);
+        font-family: 'Comic Sans MS', cursive, sans-serif;
+    }
+    
+    .stSidebar {
+        background-color: white;
+        border-right: 1px solid #FFD9C0;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+    }
+    
+    .stAlert {
+        border-left: 4px solid var(--primary-color);
+        border-radius: 8px;
+    }
+    
+    /* Add some fun hover effects */
+    .stButton>button:active {
+        transform: translateY(0);
+    }
+    
+    /* Style the chat messages */
+    .stChatMessage {
+        border-radius: 15px;
+        padding: 12px;
+        margin: 8px 0;
+    }
+    
+    /* Add a subtle pattern to the background */
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0.03;
+        z-index: -1;
+        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23FF6B35' fill-opacity='0.3' fill-rule='evenodd'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E");
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # Initialize Llama Stack client
 def get_llama_client() -> LlamaStackClient:
@@ -33,10 +144,10 @@ def get_llama_client() -> LlamaStackClient:
             base_url=base_url,
             provider_data=provider_data
         )
-        st.toast("Successfully connected to Llama Stack server", icon="✅")
+        st.toast("Connected to Open-Shifter service", icon="✅")
         return client
     except Exception as e:
-        st.error(f"Failed to initialize LlamaStackClient: {str(e)}")
+        st.error(f"Failed to initialize Open-Shifter client: {str(e)}")
         st.stop()
 
 # Initialize MCP servers and RAG
@@ -260,12 +371,12 @@ with st.sidebar:
             st.rerun()
 
 # Main app
-st.title("LLM Agent Chat")
+st.title("")
 
 # Agent management
 with st.expander("➕ Create New Agent", expanded=False):
     with st.form("create_agent_form"):
-        agent_name = st.text_input("Agent Name", key="new_agent_name", value="007")
+        agent_name = st.text_input("Agent Name", key="new_agent_name", value="🔍 Inspector")
         
         # Show checkboxes for available MCP servers
         st.write("Attach MCP Servers:")
