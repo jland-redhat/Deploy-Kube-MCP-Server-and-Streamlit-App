@@ -6,7 +6,10 @@ crashloop:
   name: crashloop-app
   image: busybox
   tag: latest
-  command: ["/bin/sh", "-c", "echo 'This container is supposed to fail'; exit 1"]
+  command: 
+    - "/bin/sh"
+    - "-c"
+    - "echo 'This container is supposed to fail'; exit 1"
   restartPolicy: Never  # This prevents container restart
 
 # For the bad image deployment

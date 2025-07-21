@@ -8,6 +8,6 @@ spec:
   containers:
   - name: {{ .Values.crashloop.name }}
     image: "{{ .Values.crashloop.image }}:{{ .Values.crashloop.tag }}"
-    command: {{ .Values.crashloop.command }}
+    command: {{ toYaml .Values.crashloop.command | nindent 6 }}
     imagePullPolicy: IfNotPresent
   restartPolicy: {{ .Values.crashloop.restartPolicy }}
