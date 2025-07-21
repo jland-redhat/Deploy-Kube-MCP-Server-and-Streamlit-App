@@ -15,6 +15,6 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: {{ $sa | quote }}
-  namespace: {{ $namespace }}
+  namespace: {{ $.Values.Namespace }}
 {{- end }}
 {{- end }}
