@@ -9,7 +9,7 @@ crashloop:
   command: 
     - "/bin/sh"
     - "-c"
-    - "echo 'This container is supposed to fail'; exit 1"
+    - "echo 'You have upset the demo gods, and they do no see fit to let you(r container) live'; exit 1"
   restartPolicy: Never  # This prevents container restart
 
 # For the bad image deployment
