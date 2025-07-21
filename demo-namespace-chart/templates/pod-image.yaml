@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Values.badimage.name }}
+  labels:
+    app: {{ .Values.badimage.name }}
+spec:
+  containers:
+  - name: {{ .Values.badimage.name }}
+    image: "{{ .Values.badimage.image }}:{{ .Values.badimage.tag }}"
+    imagePullPolicy: IfNotPresent

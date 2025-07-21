@@ -8,11 +8,6 @@ kind: RoleBinding
 metadata:
   name: {{ $sa }}-view-{{ $namespace }}
   namespace: {{ $namespace }}
-  labels:
-    app.kubernetes.io/name: {{ include "mcp.name" . }}
-    helm.sh/chart: {{ include "mcp.chart" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
