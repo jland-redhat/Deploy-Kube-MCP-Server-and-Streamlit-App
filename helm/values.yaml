@@ -1,5 +1,12 @@
 mcp:
   replicaCount: 1
+  # RBAC configuration
+  rbac:
+    # Namespace to grant view access to
+    targetNamespace: "default"
+    # List of service accounts to grant view access
+    # Format: ["service-account-1", "service-account-2"]
+    serviceAccounts: []
   image:
     repository: quay.io/manusa/kubernetes_mcp_server
     tag: latest
