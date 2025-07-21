@@ -6,7 +6,9 @@ mcp:
     targetNamespace: "default"
     # List of service accounts to grant view access
     # Format: ["service-account-1", "service-account-2"]
-    serviceAccounts: []
+    serviceAccounts: 
+    - "default" 
+    - "ocp-mcp"
   image:
     repository: quay.io/manusa/kubernetes_mcp_server
     tag: latest
