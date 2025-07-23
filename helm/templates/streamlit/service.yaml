@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "mcp-server.fullname" . }}-streamlit
+  name: streamlit-frontend
   labels:
     app: {{ include "mcp-server.name" . }}
     component: streamlit
