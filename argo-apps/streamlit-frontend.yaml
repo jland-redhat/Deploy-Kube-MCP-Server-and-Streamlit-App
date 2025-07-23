@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: streamlit-frontend
+  namespace: openshift-gitops 
+spec:
+  destination:
+    namespace: llama-serve
+    server: 'https://kubernetes.default.svc'
+  project: default
+  source:
+    path: helm
+    repoURL: 'https://github.com/jland-redhat/Deploy-Kube-MCP-Server-and-Streamlit-App.git'
+    targetRevision: HEAD
+    helm:
+      parameters:
+        - name: streamlit.image.tag
+          value: fun
+        - name: inferenceModelId
+          value: llama-maas
+  syncPolicy:
+    automated: {}

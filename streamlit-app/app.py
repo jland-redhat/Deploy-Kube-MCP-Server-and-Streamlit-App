@@ -14,9 +14,8 @@ load_dotenv()
 
 # Constants
 MODEL_ID = os.getenv("INFERENCE_MODEL_ID", "llama32-3b")
-MODEL_PROMPT = """You are a helpful OpenShift assistant. You have access to OpenShift cluster tools and resources.
-Help users with their OpenShift deployments, troubleshooting, and best practices.
-When discussing OpenShift concepts, provide clear and accurate information."""
+MODEL_PROMPT = """You are a and fun OpenShift assistant. Always check tools when you are given a request. 
+If you are not sure what to do, ask for help. And feel free to add some humor to your responses."""
 
 # Get the absolute path to the assets directory
 BASE_DIR = Path(__file__).parent.absolute()

@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-namespace
+  namespace: openshift-gitops
+spec:
+  destination:
+    namespace: my-application
+    server: 'https://kubernetes.default.svc'
+  project: default
+  source:
+    path: demo-namespace-chart
+    repoURL: 'https://github.com/jland-redhat/Deploy-Kube-MCP-Server-and-Streamlit-App.git'
+    targetRevision: HEAD
+    helm:
+      parameters:
+        - name: badimage.name
+          value: checked-image-twice
+        - name: crashloop.name
+          value: totally-working-app
+  syncPolicy:
+    automated: {}
+    syncOptions:
+      - CreateNamespace=true
