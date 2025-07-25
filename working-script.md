@@ -1,6 +1,6 @@
 
 
-Look at the logs for "totally-working-app" pod on the "my-application" namespace
+List the pods running in my-application
 
 What slack channels do I have access too?
 

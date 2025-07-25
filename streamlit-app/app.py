@@ -472,20 +472,113 @@ if st.session_state.active_agent:
                 
                 # Step content
                 with col2:
-
-                    with st.expander(f"Step {i}: {step_type}", expanded=is_user_input):
-                        content = step.get('content', 'No content')
-                        if is_user_input:
-                            st.info(content)
-                        elif isinstance(content, dict):
-                            st.json(content)
-                        else:
-                            st.text(content)
-        else:
-            st.info("No steps available. Send a message to see the processing steps.")
-    
-    # Input for new message
-    # default_question = "Who did the panthers draft in 2025?"
+                    expander_title = f"Step {i}: {step_type}"
+                    
+                    # Add expand button
+                    expand_col1, expand_col2 = st.columns([0.9, 0.1])
+                    
+                    with expand_col1:
+                        with st.expander(expander_title, expanded=is_user_input):
+                            content = step.get('content', 'No content')
+                            if is_user_input:
+                                st.info(content)
+                            elif isinstance(content, dict):
+                                st.json(content)
+                            else:
+                                st.text(content)
+                    
+                    # Add expand button for full-screen modal
+                    if expand_col2.button("⛶", key=f"expand_{i}"):
+                        # Close any other open modals
+                        for key in st.session_state.keys():
+                            if key.startswith('modal_open_') and key != f'modal_open_{i}':
+                                st.session_state[key] = False
+                        # Open current modal
+                        st.session_state[f'modal_open_{i}'] = True
+                        st.session_state[f'modal_content_{i}'] = content
+                        st.rerun()
+                    
+                    # Full-screen modal using Streamlit components
+                    if st.session_state.get(f'modal_open_{i}', False):
+                        # Close any other modals that might be open
+                        for key in list(st.session_state.keys()):
+                            if key.startswith('modal_open_') and key != f'modal_open_{i}':
+                                st.session_state[key] = False
+                        
+                        # Create a full-width container for the modal
+                        modal = st.container()
+                        
+                        # Set the modal to take full viewport
+                        st.markdown("""
+                            <style>
+                            .stApp [data-testid="stVerticalBlock"] {
+                                position: fixed;
+                                top: 0;
+                                left: 0;
+                                right: 0;
+                                bottom: 0;
+                                background: white;
+                                padding: 1rem;
+                                margin: 0 !important;
+                                max-width: 100% !important;
+                                overflow-y: auto;
+                                display: flex;
+                                flex-direction: column;
+                            }
+                            
+                            /* Style for the close button container */
+                            .stButton {
+                                margin-top: auto;
+                                margin-bottom: 2rem;
+                                display: flex;
+                                justify-content: center;
+                                width: 100%;
+                                padding: 600px;
+                            }
+                            
+                            /* Style for the close button */
+                            .stButton button {
+                                min-width: 150px;
+                                padding: 0.5rem 1rem;
+                                font-size: 1rem;
+                                margin: 0 auto;
+                            }
+                            </style>
+                        """, unsafe_allow_html=True)
+                        
+                        with modal:
+                            # Header with close button
+                            col1, col2 = st.columns([0.9, 0.1])
+                            with col1:
+                                st.title(expander_title)
+                            with col2:
+                                if st.button("✕ Close", key=f"close_modal_{i}"):
+                                    # Clean up all modal states
+                                    for key in list(st.session_state.keys()):
+                                        if key.startswith(('modal_open_', 'modal_content_')):
+                                            del st.session_state[key]
+                                    st.rerun()
+                            
+                            st.markdown("---")
+                            
+                            # Display the content with more padding
+                            content_container = st.container()
+                            with content_container:
+                                content = st.session_state.get(f'modal_content_{i}', '')
+                                if is_user_input:
+                                    st.info(content)
+                                elif isinstance(content, dict):
+                                    st.json(content)
+                                else:
+                                    st.text(content)
+                            
+                            # Add a close button at the bottom
+                            if st.button("Close", key=f"close_bottom_{i}"):
+                                # Clean up all modal states
+                                for key in list(st.session_state.keys()):
+                                    if key.startswith(('modal_open_', 'modal_content_')):
+                                        del st.session_state[key]
+                                st.rerun()
     prompt = st.chat_input("Enter your question here")
     
     # Check if we should send the default question (first load)

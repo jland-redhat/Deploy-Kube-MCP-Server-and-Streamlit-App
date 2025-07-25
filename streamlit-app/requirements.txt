@@ -6,3 +6,4 @@ llama-stack-client==0.2.12
 python-multipart>=0.0.20
 protobuf>=5.26.1,<6.0.0
 fire
+streamlit-autorefresh
