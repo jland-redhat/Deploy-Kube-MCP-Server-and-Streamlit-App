@@ -1,0 +1,10 @@
+apiVersion: v2
+name: mcp-git
+description: A Helm chart for MCP Git Server on OpenShift
+type: application
+version: 0.1.0
+appVersion: "1.0"
+keywords:
+  - git
+  - mcp
+  - version-control
